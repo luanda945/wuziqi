@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>五子棋 - 在线对战</title>
+  <link rel="stylesheet" href="css/styles.css">
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+</head>
+<body>
+  <div class="app">
+    <!-- 游戏大厅页面 -->
+    <div id="lobby" class="page active">
+      <header class="header">
+        <h1>五子棋对战</h1>
+        <div class="user-info">
+          <input type="text" id="playerName" placeholder="请输入你的名字" maxlength="10" value="玩家">
+        </div>
+      </header>
+      
+      <main class="lobby-content">
+        <div class="actions">
+          <button id="createRoomBtn" class="btn btn-primary">创建房间</button>
+          <div class="join-room">
+            <input type="text" id="roomId" placeholder="输入房间ID" maxlength="6">
+            <button id="joinRoomBtn" class="btn btn-secondary">加入房间</button>
+          </div>
+        </div>
+        
+        <div class="features">
+          <div class="feature">
+            <h3>实时对战</h3>
+            <p>与朋友一起在线下五子棋，享受实时对战的乐趣</p>
+          </div>
+          <div class="feature">
+            <h3>简单操作</h3>
+            <p>点击棋盘即可落子，操作简单直观</p>
+          </div>
+          <div class="feature">
+            <h3>游戏控制</h3>
+            <p>支持悔棋、重新开始等功能</p>
+          </div>
+        </div>
+      </main>
+    </div>
+    
+    <!-- 游戏对弈页面 -->
+    <div id="gameRoom" class="page">
+      <header class="header">
+        <button id="backToLobbyBtn" class="btn btn-ghost">返回大厅</button>
+        <h2>房间 <span id="roomIdDisplay">----</span></h2>
+        <div class="connection-status">
+          <span id="statusIndicator" class="status-indicator offline"></span>
+          <span id="statusText">离线</span>
+        </div>
+      </header>
+      
+      <main class="game-content">
+        <div class="players-panel">
+          <div class="player black-player">
+            <div class="player-avatar"></div>
+            <div class="player-info">
+              <div class="player-name" id="blackPlayerName">等待玩家...</div>
+              <div class="player-status">黑棋</div>
+            </div>
+            <div class="current-turn" id="blackPlayerTurn"></div>
+          </div>
+          
+          <div class="vs-divider">VS</div>
+          
+          <div class="player white-player">
+            <div class="player-avatar"></div>
+            <div class="player-info">
+              <div class="player-name" id="whitePlayerName">等待玩家...</div>
+              <div class="player-status">白棋</div>
+            </div>
+            <div class="current-turn" id="whitePlayerTurn"></div>
+          </div>
+        </div>
+        
+        <div class="board-container">
+          <canvas id="gameBoard" width="600" height="600"></canvas>
+        </div>
+        
+        <div class="controls-panel">
+          <button id="undoBtn" class="btn btn-control" disabled>悔棋</button>
+          <button id="restartBtn" class="btn btn-control">重新开始</button>
+          
+          <div class="game-status" id="gameStatus">等待对手加入...</div>
+          
+          <div class="move-history">
+            <h4>走棋记录</h4>
+            <div id="moveList" class="move-list"></div>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+  
+  <script src="js/game.js"></script>
+</body>
+</html>
