@@ -9,15 +9,13 @@ class Game {
     this.currentPlayer = 1; // 1: 黑棋, 2: 白棋
     this.gameStatus = 'waiting'; // waiting, playing, ended
     this.winner = null;
-    this.canvas = null;
-    this.ctx = null;
-    this.cellSize = 40;
+    this.boardElement = null;
     this.boardSize = 15;
-    this.padding = 20;
+    this.previewCell = null;
     
     this.initializeElements();
+    this.createBoard();
     this.bindEvents();
-    this.initializeCanvas();
   }
   
   // 初始化DOM元素
@@ -53,7 +51,7 @@ class Game {
     this.moveList = document.getElementById('moveList');
     
     // 棋盘
-    this.canvas = document.getElementById('gameBoard');
+    this.boardElement = document.getElementById('gameBoard');
   }
   
   // 绑定事件
@@ -63,9 +61,9 @@ class Game {
     this.backToLobbyBtn.addEventListener('click', () => this.backToLobby());
     this.undoBtn.addEventListener('click', () => this.undoMove());
     this.restartBtn.addEventListener('click', () => this.restartGame());
-    this.canvas.addEventListener('click', (e) => this.handleBoardClick(e));
-    this.canvas.addEventListener('mousemove', (e) => this.handleBoardHover(e));
-    this.canvas.addEventListener('mouseleave', () => this.handleBoardLeave());
+    this.boardElement.addEventListener('click', (e) => this.handleBoardClick(e));
+    this.boardElement.addEventListener('mouseover', (e) => this.handleBoardHover(e));
+    this.boardElement.addEventListener('mouseout', (e) => this.handleBoardLeave(e));
     
     // 玩家名称输入变化时更新
     this.playerNameInput.addEventListener('input', (e) => {
@@ -80,132 +78,93 @@ class Game {
     });
   }
   
-  // 初始化Canvas
-  initializeCanvas() {
-    this.ctx = this.canvas.getContext('2d');
-    this.drawEmptyBoard();
-  }
-  
-  // 绘制空棋盘
-  drawEmptyBoard() {
-    const canvasSize = this.cellSize * (this.boardSize - 1) + 2 * this.padding;
-    this.canvas.width = canvasSize;
-    this.canvas.height = canvasSize;
+  // 创建Excel风格棋盘
+  createBoard() {
+    const table = document.createElement('table');
+    table.className = 'excel-board-table';
     
-    // 绘制背景
-    this.ctx.fillStyle = '#F5DEB3'; // 木纹色
-    this.ctx.fillRect(0, 0, canvasSize, canvasSize);
+    // 表头行（列号 A-O）
+    const thead = document.createElement('thead');
+    const headerRow = document.createElement('tr');
     
-    // 绘制网格线
-    this.ctx.strokeStyle = '#8B4513'; // 深棕色
-    this.ctx.lineWidth = 1;
+    // 左上角空白单元格
+    const cornerCell = document.createElement('th');
+    cornerCell.className = 'excel-corner';
+    headerRow.appendChild(cornerCell);
     
-    for (let i = 0; i < this.boardSize; i++) {
-      // 横线
-      this.ctx.beginPath();
-      this.ctx.moveTo(this.padding, this.padding + i * this.cellSize);
-      this.ctx.lineTo(this.padding + (this.boardSize - 1) * this.cellSize, this.padding + i * this.cellSize);
-      this.ctx.stroke();
-      
-      // 竖线
-      this.ctx.beginPath();
-      this.ctx.moveTo(this.padding + i * this.cellSize, this.padding);
-      this.ctx.lineTo(this.padding + i * this.cellSize, this.padding + (this.boardSize - 1) * this.cellSize);
-      this.ctx.stroke();
+    for (let col = 0; col < this.boardSize; col++) {
+      const th = document.createElement('th');
+      th.className = 'excel-header';
+      th.textContent = String.fromCharCode(65 + col); // A, B, C...
+      headerRow.appendChild(th);
     }
     
-    // 绘制星位（天元和四个角的星）
-    this.drawStar(7, 7); // 天元
-    this.drawStar(3, 3); // 左上
-    this.drawStar(3, 11); // 左下
-    this.drawStar(11, 3); // 右上
-    this.drawStar(11, 11); // 右下
-  }
-  
-  // 绘制星位
-  drawStar(row, col) {
-    const x = this.padding + col * this.cellSize;
-    const y = this.padding + row * this.cellSize;
+    thead.appendChild(headerRow);
+    table.appendChild(thead);
     
-    this.ctx.fillStyle = '#8B4513';
-    this.ctx.beginPath();
-    this.ctx.arc(x, y, 3, 0, 2 * Math.PI);
-    this.ctx.fill();
-  }
-  
-  // 绘制棋盘和所有棋子
-  drawBoard() {
-    this.drawEmptyBoard();
-    
-    // 绘制所有棋子
+    // 数据行
+    const tbody = document.createElement('tbody');
     for (let row = 0; row < this.boardSize; row++) {
+      const tr = document.createElement('tr');
+      
+      // 行号
+      const rowHeader = document.createElement('th');
+      rowHeader.className = 'excel-header';
+      rowHeader.textContent = row + 1;
+      tr.appendChild(rowHeader);
+      
       for (let col = 0; col < this.boardSize; col++) {
-        if (this.board[row][col] !== 0) {
-          this.drawPiece(row, col, this.board[row][col]);
-        }
+        const td = document.createElement('td');
+        td.className = 'excel-cell';
+        td.dataset.row = row;
+        td.dataset.col = col;
+        tr.appendChild(td);
+      }
+      
+      tbody.appendChild(tr);
+    }
+    
+    table.appendChild(tbody);
+    this.boardElement.innerHTML = '';
+    this.boardElement.appendChild(table);
+  }
+  
+  // 渲染棋盘（根据当前 board 状态更新单元格）
+  renderBoard() {
+    const cells = this.boardElement.querySelectorAll('.excel-cell');
+    
+    cells.forEach((cell) => {
+      const row = parseInt(cell.dataset.row, 10);
+      const col = parseInt(cell.dataset.col, 10);
+      const color = this.board[row][col];
+      
+      cell.innerHTML = '';
+      cell.classList.remove('black-piece', 'white-piece', 'preview');
+      
+      if (color !== 0) {
+        cell.classList.add(color === 1 ? 'black-piece' : 'white-piece');
+        const piece = document.createElement('div');
+        piece.className = `piece piece-${color === 1 ? 'black' : 'white'}`;
+        cell.appendChild(piece);
+      }
+    });
+  }
+  
+  // 高亮最后落子位置
+  highlightLastMove(moves) {
+    this.boardElement.querySelectorAll('.excel-cell.last-move').forEach(cell => {
+      cell.classList.remove('last-move');
+    });
+    
+    if (moves && moves.length > 0) {
+      const lastMove = moves[moves.length - 1];
+      const cell = this.boardElement.querySelector(
+        `.excel-cell[data-row="${lastMove.row}"][data-col="${lastMove.col}"]`
+      );
+      if (cell) {
+        cell.classList.add('last-move');
       }
     }
-  }
-  
-  // 绘制单个棋子
-  drawPiece(row, col, color) {
-    const x = this.padding + col * this.cellSize;
-    const y = this.padding + row * this.cellSize;
-    const radius = this.cellSize * 0.4;
-    
-    // 绘制棋子阴影
-    this.ctx.save();
-    this.ctx.shadowColor = 'rgba(0, 0, 0, 0.3)';
-    this.ctx.shadowBlur = 5;
-    this.ctx.shadowOffsetX = 2;
-    this.ctx.shadowOffsetY = 2;
-    
-    // 绘制棋子
-    this.ctx.beginPath();
-    this.ctx.arc(x, y, radius, 0, 2 * Math.PI);
-    
-    if (color === 1) {
-      // 黑棋 - 使用径向渐变
-      const gradient = this.ctx.createRadialGradient(x - radius/3, y - radius/3, 0, x, y, radius);
-      gradient.addColorStop(0, '#555');
-      gradient.addColorStop(1, '#000');
-      this.ctx.fillStyle = gradient;
-    } else {
-      // 白棋 - 使用径向渐变
-      const gradient = this.ctx.createRadialGradient(x - radius/3, y - radius/3, 0, x, y, radius);
-      gradient.addColorStop(0, '#fff');
-      gradient.addColorStop(1, '#ddd');
-      this.ctx.fillStyle = gradient;
-    }
-    
-    this.ctx.fill();
-    this.ctx.restore();
-    
-    // 绘制棋子边框
-    this.ctx.strokeStyle = color === 1 ? '#000' : '#aaa';
-    this.ctx.lineWidth = 1;
-    this.ctx.stroke();
-  }
-  
-  // 绘制预览棋子（鼠标悬停）
-  drawPreviewPiece(row, col, color) {
-    const x = this.padding + col * this.cellSize;
-    const y = this.padding + row * this.cellSize;
-    const radius = this.cellSize * 0.4;
-    
-    this.ctx.save();
-    this.ctx.globalAlpha = 0.5;
-    
-    this.ctx.beginPath();
-    this.ctx.arc(x, y, radius, 0, 2 * Math.PI);
-    this.ctx.fillStyle = color === 1 ? '#000' : '#fff';
-    this.ctx.fill();
-    
-    this.ctx.strokeStyle = color === 1 ? '#000' : '#aaa';
-    this.ctx.lineWidth = 1;
-    this.ctx.stroke();
-    
-    this.ctx.restore();
   }
   
   // 处理棋盘点击
@@ -214,13 +173,11 @@ class Game {
       return;
     }
     
-    const rect = this.canvas.getBoundingClientRect();
-    const x = event.clientX - rect.left;
-    const y = event.clientY - rect.top;
+    const cell = event.target.closest('.excel-cell');
+    if (!cell) return;
     
-    // 转换为棋盘坐标
-    const col = Math.round((x - this.padding) / this.cellSize);
-    const row = Math.round((y - this.padding) / this.cellSize);
+    const row = parseInt(cell.dataset.row, 10);
+    const col = parseInt(cell.dataset.col, 10);
     
     // 检查是否在有效范围内
     if (row >= 0 && row < this.boardSize && col >= 0 && col < this.boardSize && this.board[row][col] === 0) {
@@ -234,28 +191,34 @@ class Game {
       return;
     }
     
-    const rect = this.canvas.getBoundingClientRect();
-    const x = event.clientX - rect.left;
-    const y = event.clientY - rect.top;
+    const cell = event.target.closest('.excel-cell');
+    if (!cell) return;
     
-    // 转换为棋盘坐标
-    const col = Math.round((x - this.padding) / this.cellSize);
-    const row = Math.round((y - this.padding) / this.cellSize);
+    const row = parseInt(cell.dataset.row, 10);
+    const col = parseInt(cell.dataset.col, 10);
     
-    // 检查是否在有效范围内
+    // 只在空格子上显示预览
     if (row >= 0 && row < this.boardSize && col >= 0 && col < this.boardSize && this.board[row][col] === 0) {
-      this.drawBoard();
-      this.drawPreviewPiece(row, col, this.playerColor);
-      this.canvas.style.cursor = 'pointer';
-    } else {
-      this.drawBoard();
-      this.canvas.style.cursor = 'default';
+      this.clearPreview();
+      this.previewCell = cell;
+      cell.classList.add('preview', this.playerColor === 1 ? 'preview-black' : 'preview-white');
     }
   }
   
-  // 处理鼠标离开棋盘
-  handleBoardLeave() {
-    this.drawBoard();
+  // 处理鼠标离开单元格
+  handleBoardLeave(event) {
+    const cell = event.target.closest('.excel-cell');
+    if (cell && cell === this.previewCell) {
+      this.clearPreview();
+    }
+  }
+  
+  // 清除预览棋子
+  clearPreview() {
+    if (this.previewCell) {
+      this.previewCell.classList.remove('preview', 'preview-black', 'preview-white');
+      this.previewCell = null;
+    }
   }
   
   // 落子
@@ -394,7 +357,7 @@ class Game {
     this.lobbyPage.classList.remove('active');
     this.gameRoomPage.classList.add('active');
     this.roomIdDisplay.textContent = this.roomId;
-    this.drawBoard();
+    this.renderBoard();
   }
   
   // 返回大厅
@@ -416,7 +379,7 @@ class Game {
     this.roomId = null;
     this.moveList.innerHTML = '';
     
-    this.drawEmptyBoard();
+    this.createBoard();
   }
   
   // 更新游戏状态
@@ -426,7 +389,9 @@ class Game {
     this.gameStatus = gameState.gameStatus;
     this.winner = gameState.winner;
     
-    this.drawBoard();
+    this.clearPreview();
+    this.renderBoard();
+    this.highlightLastMove(gameState.moves);
     this.updateCurrentPlayer();
     this.updateMoveList(gameState.moves);
     this.updateControlButtons();
