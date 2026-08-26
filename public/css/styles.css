@@ -260,7 +260,7 @@ body {
 
 /* 棋盘容器 */
 .board-container {
-  background: #F5DEB3; /* 木纹色 */
+  background: #fff;
   border-radius: 8px;
   padding: 20px;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
@@ -268,13 +268,111 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
+  overflow: auto;
 }
 
-#gameBoard {
-  border-radius: 4px;
+/* Excel 风格棋盘 */
+.excel-board {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  user-select: none;
+}
+
+.excel-board-table {
+  border-collapse: collapse;
+  border: 1px solid #a6a6a6;
+  background: #fff;
+}
+
+.excel-board-table th,
+.excel-board-table td {
+  border: 1px solid #d4d4d4;
+  text-align: center;
+  vertical-align: middle;
+}
+
+/* 行列表头 */
+.excel-header,
+.excel-corner {
+  background: #f3f3f3;
+  color: #333;
+  font-size: 12px;
+  font-weight: 600;
+  width: 34px;
+  height: 34px;
+  min-width: 34px;
+  min-height: 34px;
+}
+
+.excel-corner {
+  background: #e7e6e6;
+}
+
+/* 棋盘单元格 */
+.excel-cell {
+  width: 34px;
+  height: 34px;
+  min-width: 34px;
+  min-height: 34px;
   cursor: pointer;
-  max-width: 100%;
-  max-height: 100%;
+  background: #fff;
+  transition: background 0.15s;
+  position: relative;
+}
+
+.excel-board-table tbody tr:nth-child(even) .excel-cell {
+  background: #f9f9f9;
+}
+
+.excel-cell:hover {
+  background: #e1f0ff;
+}
+
+.excel-cell.preview {
+  background: #d6e9ff;
+}
+
+.excel-cell.last-move {
+  background: #fff2cc;
+}
+
+/* 棋子 */
+.piece {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  margin: 0 auto;
+  box-shadow: 1px 1px 3px rgba(0, 0, 0, 0.35);
+}
+
+.piece-black {
+  background: radial-gradient(circle at 35% 35%, #555, #000);
+  border: 1px solid #000;
+}
+
+.piece-white {
+  background: radial-gradient(circle at 35% 35%, #fff, #d9d9d9);
+  border: 1px solid #aaa;
+}
+
+/* 预览棋子 */
+.excel-cell.preview::after {
+  content: '';
+  display: block;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  margin: 0 auto;
+  opacity: 0.45;
+}
+
+.excel-cell.preview-black::after {
+  background: radial-gradient(circle at 35% 35%, #555, #000);
+  border: 1px solid #000;
+}
+
+.excel-cell.preview-white::after {
+  background: radial-gradient(circle at 35% 35%, #fff, #d9d9d9);
+  border: 1px solid #aaa;
 }
 
 /* 控制面板 */
@@ -428,6 +526,28 @@ body {
   
   .board-container {
     padding: 10px;
+  }
+  
+  .excel-header,
+  .excel-corner {
+    width: 26px;
+    height: 26px;
+    min-width: 26px;
+    min-height: 26px;
+    font-size: 10px;
+  }
+  
+  .excel-cell {
+    width: 26px;
+    height: 26px;
+    min-width: 26px;
+    min-height: 26px;
+  }
+  
+  .piece,
+  .excel-cell.preview::after {
+    width: 20px;
+    height: 20px;
   }
   
   .features {
